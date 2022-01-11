@@ -4,7 +4,7 @@
   "description": "An implementation of protected fields on top of class fields.",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "NODE_OPTIONS=--experimental-vm-modules npx jest"
   },
   "keywords": [
     "class",
@@ -14,7 +14,26 @@
   ],
   "author": "Ranando D. King",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rdking/CFProtected.git"
+  },
   "devDependencies": {
-    "jest": "^27.4.3"
+    "jest": "^27.4.7",
+    "jest-esm-transformer": "^1.0.0"
+  },
+  "jest": {
+    "verbose": true,
+    "moduleFileExtensions": [
+      "js",
+      "mjs"
+    ],
+    "transform": {
+      "\\.m?[j|t]sx?$": "babel-jest"
+    },
+    "testMatch": [
+      "**/__tests__/**/*.?(m)[jt]s?(x)",
+      "**/?(*.)+(spec|test).?(m)[tj]s?(x)"
+    ]
   }
 }

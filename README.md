@@ -8,7 +8,7 @@ to work around some the issues inherent in using private fields.
 Let's just start with a simple example:
 
 ```js
-const { share, accessor } = require("cfprotected");
+import { share, accessor } from "cfprotected";
 
 class Example {
     //shared static private fields

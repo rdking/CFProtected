@@ -1,5 +1,5 @@
-const { TestWatcher } = require("@jest/core");
-const { share, saveSelf, accessor } = require("../index"); //require("cfprotected");
+import { TestWatcher } from "@jest/core";
+import { share, saveSelf, accessor } from "../index"; //require("cfprotected");
 
 class Base {
     #prot = share(this, Base, {

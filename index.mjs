@@ -1,3 +1,5 @@
+"use strict"
+
 const memos = new WeakMap();
 const ACCESSOR = Symbol();
 
@@ -14,7 +16,7 @@ function getAllOwnKeys(o) {
  * @param {Object} members The object containing the properties being shared.
  * @returns {Object} The fully constructed inheritance object.
  */
-module.exports.share = function share(inst, klass, members) {
+function share(inst, klass, members) {
     let retval = {};
 
     if ((typeof(inst) == "function") 
@@ -124,7 +126,7 @@ module.exports.share = function share(inst, klass, members) {
  * @param {Object} self The current class instance as seen from the constructor.
  * @param {String} name The name of the field on which to bind the instance.
  */
- module.exports.saveSelf = function(self, name) {
+function saveSelf(self, name) {
     Object.defineProperty(self, name, {value: self});
     if (typeof(self) == "function") {
         Object.defineProperty(self.prototype, "cla$$", {value: self});
@@ -139,7 +141,7 @@ module.exports.share = function share(inst, klass, members) {
  * @returns {Object} A tagged object that will be used to create the access
  * bindings for the property.
  */
-module.exports.accessor = function(desc) {
+function accessor(desc) {
     if ((typeof(desc) == "object") &&
         (("get" in desc) || ("set" in desc))) {
         return {
@@ -155,7 +157,7 @@ module.exports.accessor = function(desc) {
  * instantiated is not a descendant of the current class.
  * @param {Function} klass The constructor of the current class.
  */
-module.exports.abstract = function(klass) {
+function abstract(klass) {
     return new Proxy(klass, {
         construct(target, args, newTarget) {
             if (newTarget.prototype === klass.prototype)
@@ -171,7 +173,7 @@ module.exports.abstract = function(klass) {
  * constructed is a descendant of the current class.
  * @param {Function} klass The constructor of the current class.
  */
-module.exports.final = function(klass) {
+function final(klass) {
     return new Proxy(klass, {
         construct(target, args, newTarget) {
             if (newTarget.prototype !== klass.prototype)
@@ -181,3 +183,5 @@ module.exports.final = function(klass) {
         }
     });
 };
+
+export { share, saveSelf, accessor, abstract, final };
