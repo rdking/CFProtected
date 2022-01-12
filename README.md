@@ -111,19 +111,13 @@ const Example = abstract(class {
 });
 ```
 
-### Note:
-This method uses a proxy internally to keep things consistent. However, the Proxy is not a membrane. So it's best if any use of static private fields is accessed through the property created by using `saveSelf(...)`.
-
 ## **final(klass)**
-This method is a class wrapper that prevents instances of the class from being created using descendant classes.
+This method is a class wrapper that prevents instances of the class from being created using descendant classes. It also attempts to prevent creation of descendant classes.
 ```js
 const Example = final(class {
     ...
 });
 ```
-
-### Note:
-Just as with `abstract(...)`, this method uses a proxy internally to keep things consistent. However, the Proxy is not a membrane. So it's best if any use of static private fields is accessed through the property created by using `saveSelf(...)`. Unfortunately, there's also a limitation with final. Normally in compiled languages, it is a syntax error to even create a class that extends from a final class. However, without taking over the means of building the class (as can be done with Babel or my ClassicJS library) it's just not possible to restrict that event. As a result, the only thing left to check for is construction of instances of such an error.
 
 ## Other features
 There will be occasions when a shared function that shadows an ancestor function needs to call the ancestor's function. Unfortunately, `super` cannot give you access to these. There is a similar problem when accessing accessors and data properties. To satisfy this need, the class-specific accessor option is given an additional property: `$uper`. Using this property, it is possible to reach the ancestor version of any shared member.

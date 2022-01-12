@@ -158,30 +158,67 @@ function accessor(desc) {
  * @param {Function} klass The constructor of the current class.
  */
 function abstract(klass) {
-    return new Proxy(klass, {
-        construct(target, args, newTarget) {
-            if (newTarget.prototype === klass.prototype)
-                throw new TypeError(`Cannot construct instance of abstract class.`);
-
-            return Reflect.construct(target, args, newTarget);
+    let name = klass.name?klass.name : "";
+    let retval = class extends klass {
+        constructor (...args) {
+            if (new.target === retval) {
+                throw new TypeError(`Class constructor ${name} is abstract and cannot be directly invoked with 'new'`);
+            }
+            super(...args);
         }
-    });
+    };
+    return retval;
 };
 
 /**
  * A class wrapper that blocks construction of an instance if the class being
- * constructed is a descendant of the current class.
+ * constructed is a descendant of the current class. It also attempts to block
+ * extending the targeted class.
  * @param {Function} klass The constructor of the current class.
  */
 function final(klass) {
-    return new Proxy(klass, {
-        construct(target, args, newTarget) {
-            if (newTarget.prototype !== klass.prototype)
-                throw new TypeError(`Cannot extend final class.`);
+    let name = klass.name?klass.name : "";
+    let retval = eval(`(function ${name}(...args) {
+        if (!new.target) {
+            throw new TypeError("Class constructor ${name} cannot be invoked without 'new'");
+        }
+        if (new.target !== retval) {
+            throw new TypeError("Cannot create an instance of a descendant of a final class");
+        }
+        if (retval.prototype !== void 0) {
+            retval.prototype = void 0;
+        }
+        let inst = new klass(...args);
+        let proto = Object.create(klass.prototype, {
+            constructor: {
+                enumerable: true,
+                configurable: true,
+                writable: true,
+                value: retval
+            }
+        });
+        Object.setPrototypeOf(inst, proto);
+        return inst;
+    })`);
+    retval.prototype = void 0;
 
-            return Reflect.construct(target, args, newTarget);
+    Object.defineProperties(retval, {
+        toString: {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value() { return klass.toString(); }
+        },
+        length: {
+            configurable: true,
+            value: klass.length
+        },
+        [Symbol.hasInstance]: {
+            value(inst) { return inst instanceof klass; }
         }
     });
+
+    return retval;
 };
 
 export { share, saveSelf, accessor, abstract, final };

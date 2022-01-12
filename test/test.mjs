@@ -1,5 +1,5 @@
 import { TestWatcher } from "@jest/core";
-import { share, saveSelf, accessor } from "../index"; //require("cfprotected");
+import { share, saveSelf, accessor, abstract, final } from "../index"; //require("cfprotected");
 
 class Base {
     #prot = share(this, Base, {
@@ -135,4 +135,34 @@ describe(`Testing shared elements inherited from a non-participant`, () => {
 
 describe(`Testing that $uper works in all cases`, () => {
     (new SuperTest).run();
-})
+});
+
+describe(`Testing that abstract classes function as expected`, () => {
+    const ATest = abstract(class {});
+    class DTest extends ATest {};
+
+    test(`Should not be able to instantiate an abstract class directly`, () => {
+        expect(() => { new ATest; }).toThrow();
+    });
+    test(`Should be able to instantiate a class derived from an abstract class`, () => {
+        expect(() => { new DTest; }).not.toThrow();
+    });
+});
+
+describe(`Testing that final classes function as expected`, () => {
+    const FTest = final(class {});
+
+    test(`Should be able to instantiate an instance of a final class directly`, () => {
+        expect(() => { new FTest; }).not.toThrow();
+    });
+    test(`Should not be able to extend a final class directly`, () => {
+        expect(() => { class DTest extends FTest {}; }).toThrow();
+    });
+    test(`Should not be able to cheat and create an instance of a class derived from a final class`, () => {
+        expect(() => {
+            FTest.prototype = {};
+            class DTest extends FTest {}
+            new DTest;
+        }).toThrow();
+    })
+});
