@@ -138,31 +138,56 @@ describe(`Testing that $uper works in all cases`, () => {
 });
 
 describe(`Testing that abstract classes function as expected`, () => {
-    const ATest = abstract(class {});
-    class DTest extends ATest {};
+    const key = Symbol();
+    const ATest = abstract(class ATest {
+        #shared = share(this, ATest, {
+            [key]: true
+        });
+    });
+    class DTest extends ATest {
+        #shared = share(this, DTest, {});
+        run() { return this.#shared[key]; }
+    };
 
-    test(`Should not be able to instantiate an abstract class directly`, () => {
+    test(`Should not be able to instantiate directly`, () => {
         expect(() => { new ATest; }).toThrow();
     });
-    test(`Should be able to instantiate a class derived from an abstract class`, () => {
+    test(`Should be able to instantiate a derived class`, () => {
         expect(() => { new DTest; }).not.toThrow();
+    });
+    test(`Should see shared members from constructed instance`, () => {
+        expect((new DTest).run()).toBe(true);
     });
 });
 
 describe(`Testing that final classes function as expected`, () => {
-    const FTest = final(class {});
+    const key = Symbol();
+    class TestBase {
+        #shared = share(this, TestBase, {
+            [key]: true
+        });
+    }
+    const FTest = final(class FTest extends TestBase {
+        #shared = share(this, FTest, {});
+        run() {
+            return this.#shared[key];
+        }
+    });
 
-    test(`Should be able to instantiate an instance of a final class directly`, () => {
+    test(`Should be able to instantiate an instance directly`, () => {
         expect(() => { new FTest; }).not.toThrow();
     });
-    test(`Should not be able to extend a final class directly`, () => {
+    test(`Should not be able to extend directly`, () => {
         expect(() => { class DTest extends FTest {}; }).toThrow();
     });
-    test(`Should not be able to cheat and create an instance of a class derived from a final class`, () => {
+    test(`Should not be able to cheat and create an instance of a derived class`, () => {
         expect(() => {
             FTest.prototype = {};
             class DTest extends FTest {}
             new DTest;
         }).toThrow();
-    })
+    });
+    test(`Should see shared members from constructed instance`, () => {
+        expect((new FTest).run()).toBe(true);
+    });
 });

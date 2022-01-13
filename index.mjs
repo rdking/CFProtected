@@ -167,6 +167,11 @@ function abstract(klass) {
             super(...args);
         }
     };
+
+    if (memos.has(klass)) {
+        memos.set(retval, memos.get(klass));
+    }
+
     return retval;
 };
 
@@ -218,6 +223,10 @@ function final(klass) {
         }
     });
 
+    if (memos.has(klass)) {
+        memos.set(retval, memos.get(klass));
+    }
+    
     return retval;
 };
 
