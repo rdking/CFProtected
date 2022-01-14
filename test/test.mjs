@@ -140,13 +140,18 @@ describe(`Testing that $uper works in all cases`, () => {
 describe(`Testing that abstract classes function as expected`, () => {
     const key = Symbol();
     const ATest = abstract(class ATest {
+        static #sshared = share(this, {
+            [key]: true
+        });
         #shared = share(this, ATest, {
             [key]: true
         });
     });
     class DTest extends ATest {
+        static #sshared = share(this, {});
         #shared = share(this, DTest, {});
         run() { return this.#shared[key]; }
+        static run() { return this.#sshared[key]; }
     };
 
     test(`Should not be able to instantiate directly`, () => {
@@ -158,20 +163,27 @@ describe(`Testing that abstract classes function as expected`, () => {
     test(`Should see shared members from constructed instance`, () => {
         expect((new DTest).run()).toBe(true);
     });
+    test(`Should see static shared members from constructed instance`, () => {
+        expect(DTest.run()).toBe(true);
+    });
 });
 
 describe(`Testing that final classes function as expected`, () => {
     const key = Symbol();
     class TestBase {
+        static #sshared = share(this, {
+            [key]: true
+        });
         #shared = share(this, TestBase, {
             [key]: true
         });
     }
     const FTest = final(class FTest extends TestBase {
+        static { saveSelf(this, "pvt"); }
+        static #sshared = share(this, {});
         #shared = share(this, FTest, {});
-        run() {
-            return this.#shared[key];
-        }
+        run() { return this.#shared[key]; }
+        static run() { return this.pvt.#sshared[key]; }
     });
 
     test(`Should be able to instantiate an instance directly`, () => {
@@ -189,5 +201,8 @@ describe(`Testing that final classes function as expected`, () => {
     });
     test(`Should see shared members from constructed instance`, () => {
         expect((new FTest).run()).toBe(true);
+    });
+    test(`Should see static shared members from constructed instance`, () => {
+        expect(FTest.run()).toBe(true);
     });
 });

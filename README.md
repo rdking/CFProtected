@@ -119,6 +119,9 @@ const Example = final(class {
 });
 ```
 
+### Notes:
+In order to ensure the functionality of final would not interfere with the ability to access static members, final is implemented using a Proxy. It is therefore very important to use `saveSelf(...)` and the resulting property (or a similar approach) to ensure that access to static private properties is not interrupted.
+
 ## Other features
 There will be occasions when a shared function that shadows an ancestor function needs to call the ancestor's function. Unfortunately, `super` cannot give you access to these. There is a similar problem when accessing accessors and data properties. To satisfy this need, the class-specific accessor option is given an additional property: `$uper`. Using this property, it is possible to reach the ancestor version of any shared member.
 

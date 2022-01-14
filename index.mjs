@@ -62,7 +62,8 @@ function share(inst, klass, members) {
     }
 
     //Get the protected data object.
-    let memo = ancestorMemo.get(inst) || {data: {}, $uper: {}, inheritance: null};
+    let ancestorKey = (inst === klass) ? ancestor : inst;
+    let memo = ancestorMemo.get(ancestorKey) || {data: {}, $uper: {}, inheritance: null};
     let protData = memo.data;
     
     //Get the details of the protected properties.
@@ -169,9 +170,11 @@ function abstract(klass) {
     };
 
     if (memos.has(klass)) {
-        memos.set(retval, memos.get(klass));
+        let memo = memos.get(klass);
+        memos.set(retval, memo);
+        memo.set(retval, memo.get(klass));
     }
-
+    
     return retval;
 };
 
@@ -182,51 +185,52 @@ function abstract(klass) {
  * @param {Function} klass The constructor of the current class.
  */
 function final(klass) {
-    let name = klass.name?klass.name : "";
-    let retval = eval(`(function ${name}(...args) {
-        if (!new.target) {
-            throw new TypeError("Class constructor ${name} cannot be invoked without 'new'");
-        }
-        if (new.target !== retval) {
-            throw new TypeError("Cannot create an instance of a descendant of a final class");
-        }
-        if (retval.prototype !== void 0) {
-            retval.prototype = void 0;
-        }
-        let inst = new klass(...args);
-        let proto = Object.create(klass.prototype, {
-            constructor: {
-                enumerable: true,
-                configurable: true,
-                writable: true,
-                value: retval
+    let retval = new Proxy(function() {}, {
+        handleDefault(fname, args) {
+            args.shift();
+            args.unshift(klass);
+            return Reflect[fname](...args);
+        },
+        construct(_, args, newTarget) {
+            if (newTarget !== retval) {
+                throw new TypeError("Cannot create an instance of a descendant of a final class");
             }
-        });
-        Object.setPrototypeOf(inst, proto);
-        return inst;
-    })`);
-    retval.prototype = void 0;
-
-    Object.defineProperties(retval, {
-        toString: {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value() { return klass.toString(); }
+            let inst = Reflect.construct(klass, args, newTarget);
+            let proto = Object.create(klass.prototype, {
+                constructor: {
+                    enumerable: true,
+                    configurable: true,
+                    writable: true,
+                    value: retval
+                }
+            });
+            Object.setPrototypeOf(inst, proto);
+            return inst;
         },
-        length: {
-            configurable: true,
-            value: klass.length
+        get(_, prop, receiver) {
+            return (prop == "prototype")
+                ? void 0
+                : Reflect.get(klass, prop, receiver);
         },
-        [Symbol.hasInstance]: {
-            value(inst) { return inst instanceof klass; }
-        }
-    });
+        set(...args) { return this.handleDefault("set", args); },
+        apply(...args) { return this.handleDefault("apply", args); },
+        defineProperty(...args) { return this.handleDefault("defineProperty", args); },
+        deleteProperty(...args) { return this.handleDefault("deleteProperty", args); },
+        getOwnPropertyDescriptor(...args) { return this.handleDefault("getOwnPropertyDescriptor", args); },
+        getPrototypeOf(...args) { return this.handleDefault("getPrototypeOf", args); },
+        has(...args) { return this.handleDefault("has", args); },
+        isExtensible(...args) { return this.handleDefault("isExtensible", args); },
+        ownKeys(...args) { return this.handleDefault("ownKeys", args); },
+        preventExtensions(...args) { return this.handleDefault("preventExtensions", args); },
+        setPrototypeOf(...args) { return this.handleDefault("setPrototypeOf", args); }
+    });        
 
     if (memos.has(klass)) {
-        memos.set(retval, memos.get(klass));
+        let memo = memos.get(klass);
+        memos.set(retval, memo);
+        memo.set(retval, memo.get(klass));
     }
-    
+
     return retval;
 };
 
