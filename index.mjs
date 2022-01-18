@@ -8,6 +8,22 @@ function getAllOwnKeys(o) {
         .concat(Object.getOwnPropertySymbols(o));
 }
 
+function bindDescriptor(desc, context) {
+    if ("value" in desc) {
+        if (typeof(desc.value) == "function") {
+            desc.value = desc.value.bind(context);
+        }
+    }
+    else {
+        if (typeof(desc.get) == "function") {
+            desc.get = desc.get.bind(context);
+        }
+        if (typeof(desc.set) == "function") {
+            desc.set = desc.set.bind(context);
+        }
+    }
+}
+
 /**
  * Used to both store inherited property information as well as retrieve it.
  * @param {Object} inst The instance object that will own the shared members.
@@ -75,7 +91,10 @@ function share(inst, klass, members) {
     let proto = Object.create(prototype,
         Object.fromEntries(mKeys
             .filter(k => !mDesc[k].value?.hasOwnProperty(ACCESSOR))
-            .map(k => [k, mDesc[k]])));
+            .map(k => {
+                bindDescriptor(mDesc[k], inst);
+                return [k, mDesc[k]];
+            })));
     Object.setPrototypeOf(protData, proto);
 
     //Build the accessors for this class.
@@ -83,17 +102,18 @@ function share(inst, klass, members) {
         let desc = (mDesc[m].value?.hasOwnProperty(ACCESSOR))
             ? {
                 enumerable: true,
-                get: mDesc[m].value.get,
-                set: mDesc[m].value.set
+                get: mDesc[m].value.get.bind(inst),
+                set: mDesc[m].value.set.bind(inst)
             }
             : mDesc[m];
-        
+
         Object.defineProperty(retval, m, desc);
     });
     
-    //Define the "super" accessors
+    //Define the "$uper" accessors
     Object.defineProperty(retval, "$uper", { value: {} });
 
+    //Build up the "$uper" object
     for (let key of mKeys) {
         if (key in prototype) {
             let obj = prototype;

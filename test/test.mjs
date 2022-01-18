@@ -2,6 +2,10 @@ import { TestWatcher } from "@jest/core";
 import { share, saveSelf, accessor, abstract, final } from "../index"; //require("cfprotected");
 
 class Base {
+    static #greeting = "Hello!";
+    static #sprot = share(this, {
+        getGreeting() { return this.#greeting; }
+    });
     #prot = share(this, Base, {
         num: 42,
         name: "John Jacob Jingleheimerschmidt",
@@ -12,7 +16,6 @@ class Base {
             get: () => this.propTestVal
         }),
         superTest: () => {
-            console.log(`Called Base::superTest() ...`);
             return 1;
         }
     });
@@ -76,12 +79,16 @@ class Derived extends Base {
 class NonParticipant extends Base {}
 
 class GrandChild extends NonParticipant {
+    static #sprot = share(this, {
+        getGreeting() {
+            return `${this.#sprot.$uper.getGreeting()} My name is`
+        }
+    });
     #prot = share(this, GrandChild, {
         otherMethod: () => {
             this.#prot.name = this.testName;
         },
         superTest: () => {
-            console.log(`Called GrandChild::superTest() ...`);
             return 1 + this.pvt.#prot.$uper.superTest();
         }
     });
@@ -103,9 +110,13 @@ class GrandChild extends NonParticipant {
 }
 
 class SuperTest extends GrandChild {
+    static #sprot = share(this, {
+        getGreeting() {
+            return `${this.#sprot.$uper.getGreeting()} "${this.name}"!`
+        }
+    });
     #prot = share(this, SuperTest, {
         superTest: () => {
-            console.log(`Called SuperTest::superTest() ...`);
             return 1 + this.pvt.#prot.$uper.superTest();
         }
     });
@@ -118,6 +129,9 @@ class SuperTest extends GrandChild {
     run() {
         test(`Should be able to call super through the entire inheritance chain`, () => {
             expect(this.pvt.#prot.superTest()).toBe(3);
+        });
+        test(`Should be able to call super through the entire static inheritance chain`, () => {
+            expect(SuperTest.#sprot.getGreeting()).toBe(`Hello! My name is "SuperTest"!`);
         });
     }
 }
