@@ -81,7 +81,7 @@ class NonParticipant extends Base {}
 class GrandChild extends NonParticipant {
     static #sprot = share(this, {
         getGreeting() {
-            return `${this.#sprot.$uper.getGreeting()} My name is`
+            return `${this.#sprot.$uper.getGreeting()} My name is`;
         }
     });
     #prot = share(this, GrandChild, {

@@ -8,20 +8,26 @@ function getAllOwnKeys(o) {
         .concat(Object.getOwnPropertySymbols(o));
 }
 
-function bindDescriptor(desc, context) {
+function useDescriptor(desc, fn) {
     if ("value" in desc) {
         if (typeof(desc.value) == "function") {
-            desc.value = desc.value.bind(context);
+            fn("value");
         }
     }
     else {
         if (typeof(desc.get) == "function") {
-            desc.get = desc.get.bind(context);
+            fn("get");
         }
         if (typeof(desc.set) == "function") {
-            desc.set = desc.set.bind(context);
+            fn("set");
         }
     }
+}
+
+function bindDescriptor(desc, context) {
+    useDescriptor(desc, (key) => {
+        desc[key] = desc[key].bind(context);
+    });
 }
 
 /**
@@ -33,8 +39,6 @@ function bindDescriptor(desc, context) {
  * @returns {Object} The fully constructed inheritance object.
  */
 function share(inst, klass, members) {
-    let retval = {};
-
     if ((typeof(inst) == "function") 
         && klass && (typeof(klass) == "object")
         && (members === void 0)) {
@@ -79,39 +83,36 @@ function share(inst, klass, members) {
 
     //Get the protected data object.
     let ancestorKey = (inst === klass) ? ancestor : inst;
-    let memo = ancestorMemo.get(ancestorKey) || {data: {}, $uper: {}, inheritance: null};
-    let protData = memo.data;
+    let memo = ancestorMemo.get(ancestorKey) || {
+        data: {}, 
+        $uper: {},
+    };
+    let retval = {};
     
     //Get the details of the protected properties.
     let mDesc = Object.getOwnPropertyDescriptors(members);
     let mKeys = getAllOwnKeys(members);
 
     //Change the prototype of protoData using the new members.
-    let prototype = Object.getPrototypeOf(protData);
+    let prototype = Object.getPrototypeOf(memo.data);
     let proto = Object.create(prototype,
         Object.fromEntries(mKeys
-            .filter(k => !mDesc[k].value?.hasOwnProperty(ACCESSOR))
             .map(k => {
+                if (mDesc[k].value?.hasOwnProperty(ACCESSOR)) {
+                    Object.assign(mDesc[k], mDesc[k].value);
+                    mDesc[k].enumerable = true;
+                    delete mDesc[k][ACCESSOR];
+                    delete mDesc[k].value;
+                    delete mDesc[k].writable;
+                }
                 bindDescriptor(mDesc[k], inst);
                 return [k, mDesc[k]];
             })));
-    Object.setPrototypeOf(protData, proto);
+    Object.setPrototypeOf(retval, proto);
 
-    //Build the accessors for this class.
-    mKeys.forEach(m => {
-        let desc = (mDesc[m].value?.hasOwnProperty(ACCESSOR))
-            ? {
-                enumerable: true,
-                get: mDesc[m].value.get.bind(inst),
-                set: mDesc[m].value.set.bind(inst)
-            }
-            : mDesc[m];
-
-        Object.defineProperty(retval, m, desc);
-    });
-    
     //Define the "$uper" accessors
-    Object.defineProperty(retval, "$uper", { value: {} });
+    let $uper = {};
+    Object.defineProperty(retval, "$uper", { value: $uper });
 
     //Build up the "$uper" object
     for (let key of mKeys) {
@@ -120,21 +121,17 @@ function share(inst, klass, members) {
             while (!obj.hasOwnProperty(key)) {
                 obj = Object.getPrototypeOf(obj);
             }
-            Object.defineProperty(retval.$uper, key, Object.getOwnPropertyDescriptor(obj, key));
+            Object.defineProperty($uper, key, Object.getOwnPropertyDescriptor(obj, key));
         }
     }
 
     //Attach the super inheritance
-    Object.setPrototypeOf(retval.$uper, memo.$uper);
-
-    //Inherit the inheritance
-    Object.setPrototypeOf(retval, memo.inheritance);
+    Object.setPrototypeOf($uper, memo.$uper);
 
     //Save the inheritance & protected data
     memos.get(klass).set(inst, {
-        data: protData,
-        inheritance: retval,
-        $uper: retval.$uper
+        data: retval,
+        $uper: $uper
     });    
 
     return retval;
