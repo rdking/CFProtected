@@ -147,7 +147,7 @@ function share(inst, klass, members) {
     return retval;
 }
 
-/**
+ /**
  * Binds the class instance to itself to allow code to selectively avoid Proxy
  * issues, especially ones involving private fields. Also binds the class
  * constructor to the instance for static referencing as "cla$$".
@@ -183,23 +183,37 @@ function accessor(desc) {
 /**
  * A class wrapper that blocks construction of an instance if the class being
  * instantiated is not a descendant of the current class.
- * @param {Function} klass The constructor of the current class.
+ * @param {function|string} klass If a function, the constructor of the current
+ * class. If a string, the name of the function being abstracted.
+ * @returns {function} Either an extended class that denies direct construction
+ * or a function that immediately throws.
  */
 function abstract(klass) {
-    let name = klass.name?klass.name : "";
-    let retval = class extends klass {
-        constructor (...args) {
-            if (new.target === retval) {
-                throw new TypeError(`Class constructor ${name} is abstract and cannot be directly invoked with 'new'`);
+    let retval;
+    if (typeof(klass) == "function") {
+        let name = klass.name?klass.name : "";
+        retval = class extends klass {
+            constructor (...args) {
+                if (new.target === retval) {
+                    throw new TypeError(`Class constructor ${name} is abstract and cannot be directly invoked with 'new'`);
+                }
+                super(...args);
             }
-            super(...args);
-        }
-    };
+        };
 
-    if (memos.has(klass)) {
-        let memo = memos.get(klass);
-        memos.set(retval, memo);
-        memo.set(retval, memo.get(klass));
+        if (memos.has(klass)) {
+            let memo = memos.get(klass);
+            memos.set(retval, memo);
+            memo.set(retval, memo.get(klass));
+        }
+    }
+    else if (typeof(klass) == "string") {
+        retval = function() {
+            throw new TypeError(`${klass}() must be overridden`);
+        }
+    }
+    else {
+        throw new TypeError(`abstract parameter must be a function or string`)
     }
     
     return retval;

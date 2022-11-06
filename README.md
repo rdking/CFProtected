@@ -104,11 +104,21 @@ class Example {
 As a bonus, when used on the constructor, it creates an additional property named "cla\$\$" on the prototype. This "cla\$\$" property gives instances a means to reference the class constructor even when the class itself is anonymous. This is a fill-in feature for one of the TC39 proposals offering syntax for the same.
 
 ## **abstract(klass)**
-This method is a class wrapper that prevents instances of the class from being constructed directly. To construct an instance of the class you must extend it. This should be nearly identical to the same functionality that exists in some compiled languages.
+This method has 2 different uses. The first is as a class wrapper that prevents instances of the class from being constructed directly. To construct an instance of the class, you must extend it. This should be nearly identical to the same functionality that exists in some compiled languages.
 ```js
 const Example = abstract(class {
     ...
 });
+```
+The second use is to mark the function as not having a valid implementation. Such functions must be overridden by derived classes.
+```js
+class Example {
+    ...
+    #prot = share(this, Example, {
+        method = abstract("Example::method")
+    });
+    ...
+};
 ```
 
 ## **final(klass)**
