@@ -1,6 +1,6 @@
 {
   "name": "cfprotected",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "description": "An implementation of protected fields on top of class fields.",
   "main": "index.js",
   "scripts": {
