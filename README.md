@@ -132,6 +132,27 @@ const Example = final(class {
 ### Notes:
 In order to ensure the functionality of final would not interfere with the ability to access static members, final is implemented using a Proxy. It is therefore very important to use `saveSelf(...)` and the resulting property (or a similar approach) to ensure that access to static private properties is not interrupted.
 
+## **define(klass, defs)**
+Adds specified definitions to the class prototype. All supplied definitions will default to {enumerable: true, configurable: true, writable: true} unless otherwise specified. The {writable} attribute will not be defaulted if {value} is not specified. This is for providing public class members that are bound to the prototype instead of the instance objects. Use this function in the `static {}` block of the class.
+```js
+class Example {
+    ...
+    static {
+        ...
+        define(this, {
+            ex1: {
+                get: () => {}
+            },
+            ex2: {
+                value: 42
+            }
+        });
+        ...
+    }
+    ...
+}
+```
+
 ## Other features
 There will be occasions when a shared function that shadows an ancestor function needs to call the ancestor's function. Unfortunately, `super` cannot give you access to these. There is a similar problem when accessing accessors and data properties. To satisfy this need, the class-specific accessor option is given an additional property: `$uper`. Using this property, it is possible to reach the ancestor version of any shared member.
 
