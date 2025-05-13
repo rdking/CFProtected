@@ -1,0 +1,9 @@
+{
+    "exclude": ["**/node_modules"],
+    "compilerOptions": {
+        "module": "ES2015",
+        "target": "ES2022",
+        "checkJs": true,
+        "moduleResolution": "node"
+    }
+}
