@@ -18,8 +18,7 @@ const ACCESSOR = Symbol();
 function getAllOwnKeys(o) {
     /** @type {(string|symbol)[]} */
     let retval = Object.getOwnPropertyNames(o);
-    retval.concat(Object.getOwnPropertySymbols(o));
-    return retval;
+    return retval.concat(Object.getOwnPropertySymbols(o));
 }
 
 /**
@@ -352,4 +351,4 @@ function define(tgt, defs) {
     Object.defineProperties(tgt.prototype, defs);
 }
 
-export { share, saveSelf, accessor, abstract, final, define };
+module.exports = { share, saveSelf, accessor, abstract, final, define };
