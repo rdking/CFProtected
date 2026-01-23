@@ -337,6 +337,8 @@ function define(tgt, defs) {
     
     for (let key in defs) {
         let def = defs[key];
+        if (typeof def !== 'object' || def === null) continue;
+
         if (!("enumerable" in def)) {
             def.enumerable = true;
         }

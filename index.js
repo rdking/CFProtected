@@ -337,13 +337,20 @@ function define(tgt, defs) {
     
     for (let key in defs) {
         let def = defs[key];
+        let isDef = Object.getOwnPropertyNames(def).reduce((rv, cv) => {
+            return rv && ["enumerable", "configurable", "writable", "value"].includes(cv);
+        }, true);
+
+        if (!def || (typeof(def) !== "object") || !isDef || !("value" in def)) {
+            continue;
+        }
         if (!("enumerable" in def)) {
             def.enumerable = true;
         }
         if (!("configurable" in def)) {
             def.configurable = true;
         }
-        if (("value" in def) && !("writable" in def)) {
+        if (!("writable" in def)) {
             def.writable = true;
         }
     }
