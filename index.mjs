@@ -190,7 +190,7 @@ function share(inst, klass, members) {
  */
 function saveSelf(self, name) {
     Object.defineProperty(self, name, {value: self});
-    if (typeof(self) == "function") {
+    if ((typeof(self) == "function") && (typeof(self.prototype) == "object") && !("cla$$" in self.prototype)) {
         Object.defineProperty(self.prototype, "cla$$", {value: self});
     }
 }
